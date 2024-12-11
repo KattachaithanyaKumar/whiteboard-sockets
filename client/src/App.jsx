@@ -5,8 +5,8 @@ import { useState } from "react";
 import TextBox from "./components/TextBox";
 
 const App = () => {
-  const [toolSelected, setToolSelected] = useState(0); // Tracks which tool is selected
-  const [textBoxes, setTextBoxes] = useState([]); // Stores the positions of the textboxes
+  const [toolSelected, setToolSelected] = useState(0); 
+  const [textBoxes, setTextBoxes] = useState([]); 
 
   // Handle workspace click
   const handleClick = (e) => {
@@ -14,13 +14,11 @@ const App = () => {
     const { clientX, clientY } = e;
 
     if (toolSelected === 1) {
-      // If text tool is selected
-      // Add a new text box at the clicked position
       setTextBoxes((prevBoxes) => [
         ...prevBoxes,
         { x: clientX, y: clientY, id: Date.now() },
       ]);
-      setToolSelected(0); // Reset tool selection after placing the text box
+      setToolSelected(0); 
     }
   };
 
@@ -32,21 +30,18 @@ const App = () => {
         ))}
       </div>
       <div className="toolbar">
-        {/* Grab tool */}
         <div
           className={`tool ${toolSelected === 0 && "tool-selected"}`}
           onClick={() => setToolSelected(0)}
         >
           <FaRegHandPaper size={32} />
         </div>
-        {/* Text tool */}
         <div
           className={`tool ${toolSelected === 1 && "tool-selected"}`}
           onClick={() => setToolSelected(1)}
         >
           <TfiText size={32} />
         </div>
-        {/* Pencil tool */}
         <div
           className={`tool ${toolSelected === 2 && "tool-selected"}`}
           onClick={() => setToolSelected(2)}
