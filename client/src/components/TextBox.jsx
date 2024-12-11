@@ -1,33 +1,36 @@
 import { useState, useRef, useEffect } from "react";
 import { FaEdit } from "react-icons/fa";
+import { MdOutlineDelete } from "react-icons/md";
 
 const TextBox = (props) => {
-  // eslint-disable-next-line react/prop-types
-  const { x, y } = props;
+  const { x, y, toolSelected, onDelete } = props; 
   const [value, setValue] = useState("");
   const [option, setOption] = useState("edit");
-  const [isFocused, setIsFocused] = useState(true); // State to track if the textbox is focused
+  const [isFocused, setIsFocused] = useState(true);
+
+  const [position, setPosition] = useState({ x: x, y: y });
+  const [isDragging, setIsDragging] = useState(false);
 
   const textboxRef = useRef(null);
-  const textAreaRef = useRef(null); // Reference for the textarea
+  const textAreaRef = useRef(null);
 
-  // Automatically focus the textarea when the component is created
   useEffect(() => {
-    if (option === "edit" && textAreaRef.current) {
+    if (toolSelected === 0 && option === "edit" && textAreaRef.current) {
       textAreaRef.current.focus();
     }
   }, [option]);
 
-  // Show the edit panel when the textbox is clicked
   const handleTextboxClick = () => {
-    setIsFocused(true);
+    if (toolSelected === 0) {
+      setIsFocused(true);
+    }
   };
 
-  // Hide the edit panel when clicking outside the textbox
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (textboxRef.current && !textboxRef.current.contains(event.target)) {
-        setIsFocused(false); // Hide the edit panel when clicked outside
+        setIsFocused(false);
+        setOption("view");
       }
     };
 
@@ -41,16 +44,21 @@ const TextBox = (props) => {
     setOption(option === "edit" ? "view" : "edit");
   };
 
-  // Update textarea height dynamically based on content
   const handleChange = (e) => {
-    setValue(e.target.value);
+    const newValue = e.target.value;
+    setValue(newValue);
+
+    // Automatically delete if value is empty
+    if (newValue.trim() === "" && onDelete) {
+      onDelete();
+    }
+
     if (textAreaRef.current) {
-      textAreaRef.current.style.height = "auto"; // Reset height before recalculating
-      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`; // Adjust height based on content
+      textAreaRef.current.style.height = "auto";
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
     }
   };
 
-  // Render content with line breaks in view mode
   const renderContentWithBreaks = (content) => {
     return content.split("\n").map((line, index) => (
       <span key={index}>
@@ -60,37 +68,78 @@ const TextBox = (props) => {
     ));
   };
 
+  const handleDoubleClick = () => {
+    if (option === "view") {
+      setOption("edit");
+    }
+  };
+
+  // Dragging Handlers
+  const handleDragStart = (e) => {
+    if (option === "view" && toolSelected === 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragMove = (e) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousemove", handleDragMove);
+    document.addEventListener("mouseup", handleDragEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", handleDragMove);
+      document.removeEventListener("mouseup", handleDragEnd);
+    };
+  }, [isDragging]);
+
+  const handleDelete = () => {
+    // if (onDelete) {
+      onDelete();
+    // }
+  };
+
   return (
     <div
       className="textbox"
       style={{
         position: "absolute",
-        left: `${x - 50}px`,
-        top: `${y - 25}px`,
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: `translate(-50%, -50%)`,
+        cursor: option === "view" ? "move" : "default",
       }}
       ref={textboxRef}
-      onClick={handleTextboxClick} // Show the edit panel when clicked
+      onMouseDown={handleDragStart}
+      onClick={handleTextboxClick}
+      onDoubleClick={handleDoubleClick}
     >
       <div>
         {option === "edit" ? (
           <textarea
-            ref={textAreaRef} // Use the ref for the textarea
+            ref={textAreaRef}
             onChange={handleChange}
             value={value}
-            style={{ overflow: "hidden", resize: "none" }} // Prevent resizing by user
+            style={{ overflow: "hidden", resize: "none" }}
           ></textarea>
         ) : (
-          <p
-            style={{
-              border: `1px solid ${isFocused ? "#7c7c7c" : "white"}`,
-            }}
-          >
+          <p className={isFocused ? "focused" : ""}>
             {renderContentWithBreaks(value)}
           </p>
         )}
       </div>
 
-      {/* Only show the edit panel if the textbox is focused */}
       {isFocused && (
         <div className="edit-panel">
           <button
@@ -101,6 +150,10 @@ const TextBox = (props) => {
             }
           >
             <FaEdit />
+          </button>
+
+          <button className="tool" onClick={handleDelete}>
+            <MdOutlineDelete />
           </button>
         </div>
       )}

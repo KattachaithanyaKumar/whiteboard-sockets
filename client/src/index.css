@@ -4,6 +4,22 @@ html {
   padding: 0;
 }
 
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Allows other elements to be clickable */
+  z-index: 1;
+  /* background-color: red; */
+}
+.workspace {
+  position: relative;
+  z-index: 2; /* Ensure elements appear above the canvas */
+}
+
+
 .app {
   background-color: #fdfdfd;
   opacity: 1;
@@ -41,6 +57,7 @@ html {
   border-radius: 12px;
   box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   background-color: white;
+  z-index: 999;
 }
 
 .tool {
@@ -48,7 +65,7 @@ html {
   padding: 10px;
   border-radius: 12px;
   cursor: pointer;
-  border: 1px solid #ffffff;
+  border: 1px solid transparent;
 }
 
 .tool:hover {
@@ -76,8 +93,30 @@ html {
 
 .textbox p {
   padding: 10px;
+  position: relative; 
+  border-radius: 4px;
+  font-size: 16px;
+  user-select: none;
 }
 
-.textbox p:hover {
-  border: 1px solid #7c7c7c;
+.textbox p.focused::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px dashed #1e90ff; 
+  border-radius: 4px;
+  pointer-events: none; 
+  box-shadow: 0 0 0 2px rgba(30, 144, 255, 0.5); 
+}
+
+.edit-panel {
+  display: flex;
+  gap: 6px;
+}
+
+.edit-panel .tool {
+  background-color: white;
 }
