@@ -1,35 +1,40 @@
-import {Button, Input} from "antd"
-import { useEffect, useState } from "react"
-import {io} from "socket.io-client"
-
-const socket = io("https://bookish-space-orbit-9xxrgjqjpv6fq4x-3000.app.github.dev");
+import { Button, Input } from "antd";
+import { useContext, useState } from "react";
+import { SocketContext } from "./App";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
-    const [loading, setLoading] = useState(true)
+  const socket = useContext(SocketContext);
+  const [name, setName] = useState("");
+  const [roomId, setRoomId] = useState("");
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        socket.on("connect", () => {
-            console.log("connected to server")
-            setLoading(false)
-        })
-    }, [])
-
-
-    if (loading) {
-        return (
-            <div className="auth">
-                <p>Loading...</p>
-            </div>
-        )
+  const handleLogin = () => {
+    if (name && roomId) {
+      socket.emit("join", { name, roomId });
+      navigate(`/board/${roomId}`);
     }
+  };
 
-    return (
-        <form className="auth">
-            <Input size="large" addonBefore="Name" />
-            <Input size="large" addonBefore="Room" />
-            <Button type="primary">Go</Button>
-        </form>
-    )
-}
+  return (
+    <form className="auth" onSubmit={(e) => e.preventDefault()}>
+      <Input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        size="large"
+        addonBefore="Name"
+      />
+      <Input
+        value={roomId}
+        onChange={(e) => setRoomId(e.target.value)}
+        size="large"
+        addonBefore="Room"
+      />
+      <Button type="primary" onClick={handleLogin}>
+        Go
+      </Button>
+    </form>
+  );
+};
 
 export default Auth;

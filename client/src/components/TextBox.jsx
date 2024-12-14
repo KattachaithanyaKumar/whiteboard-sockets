@@ -3,7 +3,8 @@ import { FaEdit } from "react-icons/fa";
 import { MdOutlineDelete } from "react-icons/md";
 
 const TextBox = (props) => {
-  const { x, y, toolSelected, onDelete } = props; 
+  // eslint-disable-next-line react/prop-types
+  const { x, y, toolSelected, onDelete } = props;
   const [value, setValue] = useState("");
   const [option, setOption] = useState("edit");
   const [isFocused, setIsFocused] = useState(true);
@@ -18,7 +19,7 @@ const TextBox = (props) => {
     if (toolSelected === 0 && option === "edit" && textAreaRef.current) {
       textAreaRef.current.focus();
     }
-  }, [option]);
+  }, [option, toolSelected]);
 
   const handleTextboxClick = () => {
     if (toolSelected === 0) {
@@ -75,7 +76,7 @@ const TextBox = (props) => {
   };
 
   // Dragging Handlers
-  const handleDragStart = (e) => {
+  const handleDragStart = () => {
     if (option === "view" && toolSelected === 0) {
       setIsDragging(true);
     }
@@ -106,7 +107,7 @@ const TextBox = (props) => {
 
   const handleDelete = () => {
     // if (onDelete) {
-      onDelete();
+    onDelete();
     // }
   };
 

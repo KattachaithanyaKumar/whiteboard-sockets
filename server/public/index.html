@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Socket.IO Room Tracker</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f9;
+      }
+      h1 {
+        color: #333;
+      }
+      .room {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+      }
+      .room-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .client {
+        margin-left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rooms and Clients</h1>
+    <div id="rooms"></div>
+
+    <script>
+      const socket = io();
+
+      // Update the rooms display
+      socket.on("rooms", (rooms) => {
+        const roomsDiv = document.getElementById("rooms");
+        roomsDiv.innerHTML = "";
+
+        for (const roomId in rooms) {
+          const roomDiv = document.createElement("div");
+          roomDiv.className = "room";
+
+          const roomTitle = document.createElement("div");
+          roomTitle.className = "room-title";
+          roomTitle.textContent = `Room: ${roomId}`;
+
+          const clientsList = document.createElement("div");
+          rooms[roomId].forEach((client) => {
+            const clientDiv = document.createElement("div");
+            clientDiv.className = "client";
+            clientDiv.textContent = `- ${client.name} (${client.id})`;
+            clientsList.appendChild(clientDiv);
+          });
+
+          roomDiv.appendChild(roomTitle);
+          roomDiv.appendChild(clientsList);
+          roomsDiv.appendChild(roomDiv);
+        }
+      });
+    </script>
+  </body>
+</html>

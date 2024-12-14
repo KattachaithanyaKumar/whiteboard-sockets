@@ -1,17 +1,25 @@
+import { useState, useRef, useEffect, useContext } from "react";
+import { SocketContext } from "./App";
 import { FaRegHandPaper } from "react-icons/fa";
 import { TfiText } from "react-icons/tfi";
 import { FaPencil } from "react-icons/fa6";
 import { TbPointer } from "react-icons/tb";
-import { useState, useRef, useEffect } from "react";
 import TextBox from "./components/TextBox";
+import { useParams } from "react-router-dom";
 
 const Board = () => {
+  const socket = useContext(SocketContext);
   const [toolSelected, setToolSelected] = useState(0);
   const [textBoxes, setTextBoxes] = useState([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const [lastPosition, setLastPosition] = useState(null);
+  const [cursors, setCursors] = useState({});
+
+  const { roomId } = useParams();
+
+  // console.log("Room Id: " + roomId);
 
   // Initialize the canvas context
   useEffect(() => {
@@ -25,30 +33,14 @@ const Board = () => {
     ctxRef.current = ctx;
   }, []);
 
-  // Handle workspace click for text boxes
-  const handleClick = (e) => {
-    e.preventDefault();
-    const { clientX, clientY } = e;
-
-    if (toolSelected === 2) {
-      setTextBoxes((prevBoxes) => [
-        ...prevBoxes,
-        { x: clientX, y: clientY, id: Date.now() },
-      ]);
-      setToolSelected(0);
-    }
-  };
-
-  // Start drawing
-  const handleMouseDown = (e) => {
-    if (toolSelected === 3) {
-      setIsDrawing(true);
-      setLastPosition({ x: e.clientX, y: e.clientY });
-    }
-  };
-
-  // Draw on the canvas
+  // Emit cursor position
   const handleMouseMove = (e) => {
+    if (toolSelected === 0) {
+      const position = { x: e.clientX, y: e.clientY };
+      console.log("current: ", position);
+
+      socket.emit("cursor-move", { roomId, position });
+    }
     if (!isDrawing || toolSelected !== 3) return;
 
     const ctx = ctxRef.current;
@@ -60,7 +52,45 @@ const Board = () => {
     setLastPosition({ x: e.clientX, y: e.clientY });
   };
 
-  // Stop drawing
+  // Listen for cursor updates
+  useEffect(() => {
+    socket.on("cursor-update", ({ id, position }) => {
+      // console.log("other cursor: ", position);
+
+      setCursors((prev) => ({ ...prev, [id]: position }));
+    });
+
+    socket.on("disconnect", (id) => {
+      setCursors((prev) => {
+        const updatedCursors = { ...prev };
+        delete updatedCursors[id];
+        return updatedCursors;
+      });
+    });
+
+    return () => {
+      socket.off("cursor-update");
+      socket.off("disconnect");
+    };
+  }, [socket]);
+
+  const handleClick = (e) => {
+    if (toolSelected === 2) {
+      setTextBoxes((prevBoxes) => [
+        ...prevBoxes,
+        { x: e.clientX, y: e.clientY, id: Date.now() },
+      ]);
+      setToolSelected(0);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (toolSelected === 3) {
+      setIsDrawing(true);
+      setLastPosition({ x: e.clientX, y: e.clientY });
+    }
+  };
+
   const handleMouseUp = () => {
     if (toolSelected === 3) {
       setIsDrawing(false);
@@ -69,15 +99,16 @@ const Board = () => {
   };
 
   const removeTextBox = (id) => {
-    setTextBoxes((prevTextBoxes) => prevTextBoxes.filter((textbox) => textbox.id !== id));
+    setTextBoxes((prevTextBoxes) =>
+      prevTextBoxes.filter((textbox) => textbox.id !== id)
+    );
   };
-  
 
   return (
     <div
       className={`app ${toolSelected === 1 && "grab"}`}
-      onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
+      onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
     >
       <canvas
@@ -94,6 +125,21 @@ const Board = () => {
             toolSelected={toolSelected}
             onDelete={() => removeTextBox(box.id)}
           />
+        ))}
+        {Object.entries(cursors).map(([id, position]) => (
+          <div
+            key={id}
+            className="cursor"
+            style={{
+              position: "absolute",
+              left: position.x,
+              top: position.y,
+              pointerEvents: "none",
+            }}
+          >
+            <div className="cursor-dot" />
+            {/* <span>{id}</span> */}
+          </div>
         ))}
       </div>
       <div className="toolbar">
